@@ -1,0 +1,34 @@
+There's a syntax error in your JavaScript code. In the definition of the opts variable, you never close the object literal before starting the fetch call. In other words, the opts object isn't properly terminated with a closing curly brace (and a semicolon). Here's the problematic section:
+
+-----------------------------------------------------------
+  var opts = {
+          ratio: '16:9',
+          navigation: {
+            scroll: true,   // Enables scroll navigation
+            touch: true     // Enables touch navigation
+          }
+    // dynamically fetch the markdown content from README.md
+    fetch("README.md")
+-----------------------------------------------------------
+
+To fix it, close the opts object literal before calling fetch. For example:
+
+-----------------------------------------------------------
+  var opts = {
+    ratio: '16:9',
+    navigation: {
+      scroll: true,   // Enables scroll navigation
+      touch: true     // Enables touch navigation
+    }
+  };  // Properly close opts
+
+  // dynamically fetch the markdown content from README.md
+  fetch("README.md")
+    .then(response => response.text())
+    .then(text => {
+      document.getElementById('source').textContent = text;
+      remark.create(opts);
+    });
+-----------------------------------------------------------
+
+Make sure to adjust your closing braces and semicolons as needed. This should resolve the syntax issues in your index.thtml file.
