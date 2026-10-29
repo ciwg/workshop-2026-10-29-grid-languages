@@ -17,22 +17,15 @@ The central question is not whether to use LLMs. We already do. The question is 
 
 ## The progression
 
-```text
-1. prompt --LLM--> code
+A Domain Specific Language (DSL) is a language designed to write code
+for a particular problem domain -- it tends to have  syntax and
+semantics that are optimized for the problem at hand, and allows for
+more concise and expressive code than a general-purpose language.
 
-2. prompt -> specification --LLM--> candidate code --checks--> accepted code
-
-3. prompt -> language design, compiler, application source --compiler--> executable artifact
-```
-
---
-
-Each stage keeps the useful parts of the earlier stage.
-
-Each stage makes a stronger artifact authoritative.
+.center[![:img Three flows from prompts to code or executable artifacts, 100%](images/three-stages-progression.svg)]
 
 ???
-This is a progression, not a maturity ranking. Stage 1 is often the right way to explore. Stage 2 gives us an independent statement of intent. Stage 3 makes the accepted specification executable through a conventional compiler boundary.
+Each stage keeps the useful parts of the earlier stage and makes a stronger artifact authoritative. This is a progression, not a maturity ranking. Stage 1 is often the right way to explore. Stage 2 gives us an independent statement of intent. Stage 3 makes the accepted specification executable through a conventional compiler boundary.
 
 ---
 

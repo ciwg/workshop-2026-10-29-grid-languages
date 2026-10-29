@@ -1,0 +1,77 @@
+digraph progression {
+  graph [
+    bgcolor="transparent"
+    outputorder="edgesfirst"
+    pad="0.16"
+    rankdir="TB"
+    ranksep="0.60"
+    nodesep="0.30"
+    splines="polyline"
+  ];
+
+  node [
+    shape="box"
+    style="rounded,filled"
+    color="#475569"
+    fillcolor="#f8fafc"
+    fontcolor="#0f172a"
+    fontname="DejaVu Sans"
+    fontsize="18"
+    margin="0.18,0.11"
+    penwidth="1.5"
+  ];
+
+  edge [
+    color="#475569"
+    fontcolor="#334155"
+    fontname="DejaVu Sans"
+    fontsize="15"
+    arrowsize="0.75"
+    penwidth="1.5"
+  ];
+
+  stage1 [label="1. Vibe coding", shape="plain", fontsize="22"];
+  stage2 [label="2. Written specs", shape="plain", fontsize="22"];
+  stage3 [label="3. Domain language", shape="plain", fontsize="22"];
+  stage3b [label="3b. Application", style="invis"];
+
+  prompt1 [label="Prompt", fillcolor="#f1f5f9"];
+  code1 [label="Code", fillcolor="#fef3c7", color="#d97706"];
+
+  prompt2 [label="Prompt", fillcolor="#f1f5f9"];
+  spec2 [label="Specification", fillcolor="#dbeafe", color="#2563eb"];
+  candidate2 [label="Candidate code", fillcolor="#fef3c7", color="#d97706"];
+  executable2 [label="Executable code", fillcolor="#dcfce7", color="#16a34a"];
+
+  prompt3 [label="Prompt", fillcolor="#f1f5f9"];
+  language3 [ label="Language design" fillcolor="#ede9fe" color="#7c3aed" ];
+  compiler3 [ label="Compiler" fillcolor="#ede9fe" color="#7c3aed" ];
+  app3 [ label="Application source (in DSL)" fillcolor="#ede9fe" color="#7c3aed" ];
+  executable3 [label="Executable code", fillcolor="#dcfce7", color="#16a34a"];
+
+  { rank=same; stage1; prompt1; code1; }
+  { rank=same; stage2; prompt2; spec2; candidate2; accepted2; }
+  { rank=same; stage3; prompt3; language3; compiler3; }
+  { rank=same; stage3b; app3; executable3; }
+
+  stage1 -> prompt1 [style="invis", weight="20"];
+  stage2 -> prompt2 [style="invis", weight="20"];
+  stage3 -> prompt3 [style="invis", weight="20"];
+
+  stage1 -> stage2 [style="invis", weight="100"];
+  stage2 -> stage3 [style="invis", weight="100"];
+
+  stage3b -> app3 [style="invis", weight="100"];
+
+  prompt1 -> code1 [label=" LLM "];
+
+  prompt2 -> spec2;
+  spec2 -> candidate2 [label=" LLM "];
+  candidate2 -> accepted2 [label=" checks "];
+
+  prompt3 -> language3;
+  prompt3 -> compiler3;
+  language3 -> compiler3 [style="invis"];
+  prompt3 -> app3;
+  app3 -> executable3 [label=" compiler "];
+}
