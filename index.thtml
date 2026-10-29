@@ -33,6 +33,166 @@
     font-size: 0.75em;
     color: #666;
     }
+
+    :root {
+      --viz-ink: #0f172a;
+      --viz-line: #475569;
+      --viz-neutral: #f1f5f9;
+      --viz-neutral-border: #64748b;
+      --viz-llm: #fef3c7;
+      --viz-llm-border: #d97706;
+      --viz-spec: #dbeafe;
+      --viz-spec-border: #2563eb;
+      --viz-compiler: #ede9fe;
+      --viz-compiler-border: #7c3aed;
+      --viz-artifact: #dcfce7;
+      --viz-artifact-border: #16a34a;
+      --viz-risk: #fee2e2;
+      --viz-risk-border: #dc2626;
+    }
+
+    .diagram {
+      box-sizing: border-box;
+      color: var(--viz-ink);
+      font-size: 0.72em;
+      line-height: 1.2;
+      margin: 0.45em auto 0;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    .diagram *, .diagram *::before, .diagram *::after {
+      box-sizing: border-box;
+    }
+
+    .flow-row,
+    .flow-column,
+    .compare,
+    .stack {
+      align-items: center;
+      display: flex;
+      gap: 0.55em;
+      justify-content: center;
+    }
+
+    .flow-column,
+    .stack {
+      flex-direction: column;
+    }
+
+    .compare {
+      display: grid;
+    }
+
+    .columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .node,
+    .card {
+      background: var(--viz-neutral);
+      border: 2px solid var(--viz-neutral-border);
+      border-radius: 0.65em;
+      padding: 0.62em 0.78em;
+      text-align: center;
+    }
+
+    .node {
+      min-width: 7.2em;
+    }
+
+    .node.wide { min-width: 11em; }
+    .node.compact { min-width: 0; padding: 0.42em 0.58em; }
+    .node.centered { margin-left: auto; margin-right: auto; width: max-content; }
+    .card { align-self: stretch; text-align: left; }
+    .card h3 { font-size: 1.25em; margin: 0 0 0.35em; }
+    .card ul { margin: 0.25em 0; padding-left: 1.25em; }
+    .card li { margin: 0.2em 0; }
+
+    .neutral { background: var(--viz-neutral); border-color: var(--viz-neutral-border); }
+    .llm, .candidate { background: var(--viz-llm); border-color: var(--viz-llm-border); }
+    .spec { background: var(--viz-spec); border-color: var(--viz-spec-border); }
+    .compiler, .language { background: var(--viz-compiler); border-color: var(--viz-compiler-border); }
+    .artifact, .accepted { background: var(--viz-artifact); border-color: var(--viz-artifact-border); }
+    .risk { background: var(--viz-risk); border-color: var(--viz-risk-border); }
+    .authoritative { border-width: 4px; font-weight: 700; }
+
+    .arrow {
+      color: var(--viz-line);
+      flex: 0 0 auto;
+      font-size: 1.8em;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .arrow small {
+      display: block;
+      font-size: 0.45em;
+      font-weight: 500;
+      margin-top: 0.2em;
+      white-space: nowrap;
+    }
+
+    .arrow.llm-arrow { color: var(--viz-llm-border); }
+    .arrow.compiler-arrow { color: var(--viz-compiler-border); }
+    .arrow.check-arrow { color: var(--viz-artifact-border); }
+    .arrow.risk-arrow { color: var(--viz-risk-border); }
+
+    .bit-field {
+      display: flex;
+      font-family: monospace;
+      font-size: 1.1em;
+      justify-content: center;
+      margin: 0.6em 0;
+    }
+
+    .bit-field > span {
+      border: 2px solid var(--viz-line);
+      padding: 0.7em 1em;
+    }
+
+    .bit-field > span:first-child { border-radius: 0.5em 0 0 0.5em; }
+    .bit-field > span:last-child { border-radius: 0 0.5em 0.5em 0; }
+    .bit-sign { background: var(--viz-risk); }
+    .bit-exponent { background: var(--viz-llm); }
+    .bit-significand { background: var(--viz-spec); flex: 1; max-width: 18em; }
+
+    .formula {
+      font-family: monospace;
+      font-size: 1.25em;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .rounding-loss {
+      color: var(--viz-risk-border);
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    .tower-layout {
+      align-items: center;
+      display: grid;
+      gap: 2em;
+      grid-template-columns: minmax(18em, 0.9fr) minmax(0, 1.1fr);
+    }
+
+    .tower-layout .stack { gap: 0.3em; }
+    .tower-layout .node { padding-bottom: 0.4em; padding-top: 0.4em; }
+    .tower-layout .arrow { font-size: 1.35em; }
+
+    .diagram-notes {
+      font-size: 1.25em;
+      line-height: 1.3;
+      margin: 0;
+      padding-left: 1.35em;
+      text-align: left;
+    }
+
+    .diagram-notes li { margin: 0.55em 0; }
+
+    .muted-text { color: #475569; }
+    .diagram a { color: #1d4ed8; }
+    .diagram figcaption { margin-top: 0.45em; text-align: center; }
   </style>
 </head>
 <body>

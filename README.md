@@ -29,22 +29,6 @@ Each stage keeps the useful parts of the earlier stage and makes a stronger arti
 
 ---
 
-## Outline: three stages
-
-| Stage | Authority | Translation | Main risk |
-| --- | --- | --- | --- |
-| 1. Vibe coding | Generated code | LLM | Intent exists mostly in conversation |
-| 2. Written specs | Markdown or another spec language | LLM | Two valid-looking translations may differ |
-| 3. Domain language | Executable DSL source | Deterministic compiler | Language or compiler can encode the wrong semantics |
-
---
-
-The LLM remains useful in all three stages.
-
-Its role changes.
-
----
-
 class: center, middle
 
 # Stage 1
@@ -55,15 +39,15 @@ class: center, middle
 
 ## Vibe coding
 
-```text
-conversation + examples
-          |
-          v
-         LLM
-          |
-          v
-    working code
-```
+<figure class="diagram" role="group" aria-label="Conversation and examples pass through an LLM to produce working code, which becomes the only authoritative artifact.">
+  <div class="flow-row">
+    <div class="node neutral wide">Conversation<br>+ examples</div>
+    <div class="arrow llm-arrow" aria-hidden="true">⇢<small>prompt</small></div>
+    <div class="node llm">LLM</div>
+    <div class="arrow llm-arrow" aria-hidden="true">⇢<small>generates</small></div>
+    <div class="node artifact authoritative wide">Working code<br><small>the specification</small></div>
+  </div>
+</figure>
 
 - Extremely fast path from idea to experiment
 - Excellent for discovery and disposable prototypes
@@ -101,20 +85,15 @@ class: center, middle
 
 ## Specification-directed coding
 
-```text
-Markdown / diagrams / schemas / examples
-                    |
-                    v
-                   LLM
-                    |
-                    v
-              candidate code
-                    |
-          static checks + tests
-                    |
-                    v
-               accepted code
-```
+<figure class="diagram" role="group" aria-label="An authoritative specification is interpreted by an LLM into candidate code, which becomes accepted code only after checks.">
+  <div class="flow-row">
+    <div class="node spec authoritative wide">Markdown · diagrams<br>schemas · examples<br><small>authoritative specification</small></div>
+    <div class="arrow llm-arrow" aria-hidden="true">⇢<small>LLM interprets</small></div>
+    <div class="node candidate wide">Candidate code</div>
+    <div class="arrow check-arrow" aria-hidden="true">→<small>static checks + tests</small></div>
+    <div class="node accepted authoritative wide">Accepted code</div>
+  </div>
+</figure>
 
 The code should reflect the specification.
 
@@ -144,16 +123,24 @@ A Markdown spec can be precise, but prose rarely has a complete formal semantics
 
 ## Why two LLM runs can differ
 
-- Token sampling can deliberately choose among plausible continuations
-- Prompts, retrieved context, tool results, and model versions can change
-- Parallel numerical kernels may accumulate small rounding differences
-- Small logit differences can change an early token and the rest of the output
+There are multiple sources of variation—GPU arithmetic is one and is easy to prove:
 
---
+- Token sampling can choose among plausible continuations
+- Prompts, retrieved context, and tool results can change
+- Model versions and serving systems can change
 
-GPU arithmetic is one possible source of variation.
-
-It is **not** the whole explanation for LLM variability.
+<figure class="diagram" role="group" aria-label="GPU reduction order provides one demonstrable path from identical inputs to a changed token decision.">
+  <div class="flow-row">
+    <div class="node neutral wide">Same input<br>same weights</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node llm wide">Different GPU<br>addition order</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node risk wide">Different rounded<br>low bits</div>
+    <div class="arrow risk-arrow" aria-hidden="true">→</div>
+    <div class="node candidate wide">Threshold or token<br>can change</div>
+  </div>
+  <figcaption>Interactive demonstration: <a href="https://floatlab.pplx.app/">Float Lab — IEEE 754 explorer</a></figcaption>
+</figure>
 
 ???
 Temperature zero does not by itself promise a stable result across model versions, serving stacks, hardware, or changing context. Conversely, GPUs are capable of deterministic computations when the algorithms, operation order, inputs, software, and hardware behavior are controlled.
@@ -164,9 +151,14 @@ Temperature zero does not by itself promise a stable result across model version
 
 Conceptually, a binary floating-point value has:
 
-```text
-sign × significand × 2^exponent
-```
+<figure class="diagram" role="group" aria-label="A floating-point value divides a finite bit budget among a sign, exponent, and significand.">
+  <div class="bit-field">
+    <span class="bit-sign">sign<br><small>±</small></span>
+    <span class="bit-exponent">exponent<br><small>scale</small></span>
+    <span class="bit-significand">significand<br><small>significant binary digits</small></span>
+  </div>
+  <div class="formula">sign × significand × 2<sup>exponent</sup></div>
+</figure>
 
 The bit budget is finite.
 
@@ -184,12 +176,18 @@ IEEE 754 also specifies signed zero, infinities, NaNs, subnormal numbers, roundi
 
 To add values with different exponents:
 
-```text
-1. align the exponents
-2. shift the smaller significand
-3. add the significands
-4. normalize and round
-```
+<figure class="diagram" role="group" aria-label="Floating-point addition aligns exponents, shifts the smaller significand, adds, then normalizes and rounds.">
+  <div class="flow-row">
+    <div class="node spec"><strong>1</strong><br>Align exponents</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node llm"><strong>2</strong><br>Shift smaller<br>significand</div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="node spec"><strong>3</strong><br>Add<br>significands</div>
+    <div class="arrow risk-arrow" aria-hidden="true">→</div>
+    <div class="node artifact"><strong>4</strong><br>Normalize<br>and round</div>
+  </div>
+  <div class="formula" style="margin-top:0.7em">1.001010… <span class="muted-text">+ 0.000001…</span> <span class="rounding-loss">→ lost low bits</span></div>
+</figure>
 
 --
 
@@ -269,13 +267,14 @@ Avoiding floating point is not a universal rule. Some microcontrollers have capa
 
 ## Stage 2's remaining gap
 
-```text
-same written specification
-        |              |
-      LLM A          LLM B
-        |              |
-    program A      program B
-```
+<figure class="diagram" role="group" aria-label="The same written specification can produce two programs through separate LLM runs, and both can pass known tests while differing elsewhere.">
+  <div class="node spec authoritative wide centered">Same written specification</div>
+  <div class="arrow llm-arrow" aria-hidden="true">⇣<small>interpreted twice</small></div>
+  <div class="compare columns-2">
+    <div class="card llm"><div class="node llm">LLM A</div><div class="arrow" aria-hidden="true">↓</div><div class="node candidate">Program A</div><div class="node accepted compact">Known tests pass</div></div>
+    <div class="card llm"><div class="node llm">LLM B</div><div class="arrow" aria-hidden="true">↓</div><div class="node candidate">Program B</div><div class="node accepted compact">Known tests pass</div></div>
+  </div>
+</figure>
 
 Both programs may pass the known tests and still differ elsewhere.
 
@@ -307,9 +306,13 @@ Use LLMs to help:
 
 Then use the accepted compiler for normal builds.
 
-```text
-accepted DSL source --deterministic compiler--> artifact
-```
+<figure class="diagram" role="group" aria-label="An accepted domain-language program passes through a deterministic compiler to produce an artifact without LLM interpretation during the normal build.">
+  <div class="flow-row">
+    <div class="node spec authoritative wide">Accepted DSL source</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→<small>deterministic compiler</small></div>
+    <div class="node artifact authoritative">Artifact</div>
+  </div>
+</figure>
 
 ???
 The LLM does not disappear. It helps create and edit both language and programs. The important shift is that an ordinary build no longer asks an LLM to reinterpret the application's meaning.
@@ -338,14 +341,17 @@ Deterministic translation and reproducible builds are related but distinct. Byte
 
 ## The compiler path
 
-```text
-domain source
-    -> parse + type-check
-    -> typed intermediate representation
-    -> verified lowering passes
-    -> target representation
-    -> executable artifact
-```
+<figure class="diagram" role="group" aria-label="A compiler transforms domain source through parsing, a typed intermediate representation, verified lowering, and a target representation into an artifact.">
+  <div class="flow-row">
+    <div class="node spec authoritative">Domain source</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→<small>parse + type-check</small></div>
+    <div class="node compiler wide">Typed intermediate<br>representation</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→<small>verified lowering</small></div>
+    <div class="node compiler wide">Target<br>representation</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node artifact authoritative">Executable artifact</div>
+  </div>
+</figure>
 
 Each arrow should have:
 
@@ -375,14 +381,25 @@ The distinction matters when we say a build is complete or reproducible.
 
 An [intermediate representation](https://en.wikipedia.org/wiki/Intermediate_representation) gives multiple front ends and targets a shared boundary.
 
-```text
-DSL A --\
-DSL B ----> typed IR ----> Go
-DSL C --/       |  \----> WebAssembly
-                \-------> Grid assembly
-```
+<figure class="diagram" role="group" aria-label="Several domain languages converge on a typed intermediate representation and share analysis and lowering to several targets.">
+  <div class="flow-row">
+    <div class="flow-column">
+      <div class="node spec compact">DSL A</div>
+      <div class="node spec compact">DSL B</div>
+      <div class="node spec compact">DSL C</div>
+    </div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node compiler authoritative wide">Typed IR<br><small>shared analysis + lowering</small></div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="flow-column">
+      <div class="node artifact compact">Go</div>
+      <div class="node artifact compact">WebAssembly</div>
+      <div class="node artifact compact">Grid assembly</div>
+    </div>
+  </div>
+</figure>
 
-It can preserve types, source locations, effects, and invariants while making analysis and lowering reusable.
+It can preserve types, source locations, side effects, and invariants while making analysis and lowering reusable.
 
 ???
 An abstract syntax tree is often source-shaped. An IR is shaped for analysis or transformation. There can be several IRs: a high-level domain IR, a lower control-flow IR, and a machine-oriented IR. Lowering too early can discard the vocabulary needed for useful diagnostics.
@@ -391,16 +408,24 @@ An abstract syntax tree is often source-shaped. An IR is shaped for analysis or 
 
 ## LLVM and MLIR
 
-[LLVM](https://en.wikipedia.org/wiki/LLVM) provides reusable compiler components and a widely used lower-level IR and backend ecosystem.
+<a href="https://en.wikipedia.org/wiki/LLVM">LLVM</a> provides reusable compiler components and a widely used lower-level IR and backend ecosystem.
 
-[MLIR](https://mlir.llvm.org/) provides infrastructure for multiple abstraction levels and extensible **dialects**.
+<a href="https://mlir.llvm.org/">MLIR</a> provides infrastructure for multiple abstraction levels and extensible **dialects**.
 
-```text
-domain dialect
-    -> shared dialects
-    -> target-specific dialect
-    -> LLVM IR or another backend
-```
+<figure class="diagram" role="group" aria-label="MLIR carries programs through multiple dialect levels and can lower either into LLVM IR or another backend.">
+  <div class="flow-row">
+    <div class="node language">Domain dialect</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node language">Shared dialects</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node language">Target dialect</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="flow-column">
+      <div class="node compiler compact">LLVM IR</div>
+      <div class="node neutral compact">Another backend</div>
+    </div>
+  </div>
+</figure>
 
 MLIR is compiler infrastructure—not one universal source language.
 
@@ -411,19 +436,29 @@ MLIR is useful when a compiler needs to retain high-level tensor, workflow, hard
 
 ## A language tower
 
-```text
-application DSL
-    -> domain IR / lower-level DSL
-    -> shared workflow and promise operations
-    -> portable Grid machine operations
-    -> Grid assembly
-    -> program image
-```
-
-- Each level keeps the meaning needed at that level
-- Each lowering step proves that its output is legal for the next level
-- Several application languages can share lower layers
-- New targets can reuse upper layers
+<figure class="diagram" role="group" aria-label="An application language lowers through domain, workflow, Grid machine, and assembly layers into a program image, with validation at every boundary.">
+  <div class="tower-layout">
+    <div class="stack">
+      <div class="node spec authoritative wide">Application DSL</div>
+      <div class="arrow check-arrow" aria-hidden="true">↓<small>validate</small></div>
+      <div class="node language wide">Domain IR / lower-level DSL</div>
+      <div class="arrow check-arrow" aria-hidden="true">↓<small>validate</small></div>
+      <div class="node language wide">Shared workflow + promise operations</div>
+      <div class="arrow check-arrow" aria-hidden="true">↓<small>validate</small></div>
+      <div class="node compiler wide">Portable Grid machine operations</div>
+      <div class="arrow check-arrow" aria-hidden="true">↓<small>validate</small></div>
+      <div class="node compiler wide">Grid assembly</div>
+      <div class="arrow check-arrow" aria-hidden="true">↓<small>validate</small></div>
+      <div class="node artifact authoritative wide">Program image</div>
+    </div>
+    <ul class="diagram-notes">
+      <li>Each level keeps the meaning needed at that level</li>
+      <li>Each lowering step checks that its output is legal for the next level</li>
+      <li>Several application languages can share lower layers</li>
+      <li>New targets can reuse upper layers</li>
+    </ul>
+  </div>
+</figure>
 
 ???
 This resembles MLIR's dialect model, but the Grid experiment uses content-addressed definitions and portable Grid machine semantics rather than adopting MLIR itself as the runtime.
@@ -434,18 +469,33 @@ This resembles MLIR's dialect model, but the Grid experiment uses content-addres
 
 The current prototype explores:
 
-```text
-application dialect
-    -> typed, content-addressed Grid IR
-    -> portable rewrite passes
-    -> gridasm
-    -> immutable Grid program image
-    -> conforming decentralized VM
-```
+<figure class="diagram" role="group" aria-label="The Grid experiment compiles an application dialect into a portable program image, then separates deterministic execution from capability-controlled outside actions.">
+  <div class="flow-row">
+    <div class="node spec">Application dialect</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node language wide">Typed, content-addressed Grid IR</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→<small>portable rewrites</small></div>
+    <div class="node compiler">gridasm</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node artifact wide">Immutable program image</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node neutral wide">Conforming decentralized VM</div>
+  </div>
+</figure>
 
 The deterministic machine constructs requests for outside actions and suspends.
 
 Capability-controlled agents perform and record those side effects.
+
+<figure class="diagram" role="group" aria-label="The deterministic Grid machine suspends at an outside-action request; a capability-controlled agent performs and records the side effect before the machine resumes.">
+  <div class="flow-row">
+    <div class="node compiler wide">Deterministic machine<br><small>construct request + suspend</small></div>
+    <div class="arrow risk-arrow" aria-hidden="true">→<small>outside-action request</small></div>
+    <div class="node risk wide">Capability-controlled agent<br><small>perform side effect</small></div>
+    <div class="arrow check-arrow" aria-hidden="true">→<small>record result</small></div>
+    <div class="node artifact wide">Resume / replay<br><small>consume recorded evidence</small></div>
+  </div>
+</figure>
 
 [Grid machine language prototype](https://github.com/stevegt/gridspec/tree/main/x/grid-machine-language)
 
@@ -486,6 +536,19 @@ The experiment contains a checked-in Grid assembly program that:
 - constructs the program image; and
 - can assemble its own exact source to the same result.
 
+<figure class="diagram" role="group" aria-label="Go provides the bootstrap environment for a gridasm assembler that can then assemble its own source to the same program image.">
+  <div class="flow-row">
+    <div class="flow-column">
+      <div class="node neutral wide">Go bootstrap tools</div>
+      <div class="node spec wide">Canonical assembler source</div>
+    </div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→<small>bootstrap</small></div>
+    <div class="node compiler authoritative wide">Assembler program image</div>
+    <div class="arrow check-arrow" aria-hidden="true">→<small>assembles its source</small></div>
+    <div class="node artifact authoritative wide">Same descriptor<br>+ block map</div>
+  </div>
+</figure>
+
 [Design and qualification](https://github.com/stevegt/gridspec/blob/main/x/grid-machine-language/self-hosted-assembler.md) · [Assembler source](https://github.com/stevegt/gridspec/blob/main/x/grid-machine-language/grid-assembler-v1.gridasm)
 
 ???
@@ -495,19 +558,22 @@ This is a bounded self-hosting experiment, not bootstrap magic. Go supplies the 
 
 ## Two developer paths
 
-### `libgrid`
-
-- Conventional Go-facing library
-- Familiar tools and fast prototyping
-- Easy entry for existing applications
-- Library implementation may eventually be generated from DSL/Grid assembly
-
-### DSL stack
-
-- Language designed for an application or domain
-- Domain checks happen before low-level code exists
-- Lowers through one or more dialects to `gridasm`
-- Stronger reproducibility and multi-target potential
+<figure class="diagram" role="group" aria-label="Developers can choose a conventional Go library or a custom domain language while sharing lower Grid semantics and runtime behavior.">
+  <div class="node neutral centered">Developer</div>
+  <div class="arrow" aria-hidden="true">↓<small>choose an entry path</small></div>
+  <div class="compare columns-2">
+    <div class="card spec"><h3><code>libgrid</code></h3><ul><li>Conventional Go-facing library</li><li>Familiar tools and fast prototypes</li><li>Easy entry for existing applications</li></ul></div>
+    <div class="card compiler"><h3>Custom DSL stack</h3><ul><li>Application or domain language</li><li>Domain checks before low-level code</li><li>One or more lowering layers</li></ul></div>
+  </div>
+  <div class="arrow compiler-arrow" aria-hidden="true">↓<small>rejoin</small></div>
+  <div class="node language wide centered">Shared Grid semantics</div>
+  <div class="arrow compiler-arrow" aria-hidden="true">↓<small>lower</small></div>
+  <div class="flow-row">
+    <div class="node compiler">gridasm</div>
+    <div class="arrow compiler-arrow" aria-hidden="true">→</div>
+    <div class="node artifact">Grid runtime</div>
+  </div>
+</figure>
 
 ???
 These paths can coexist. The Go library is an on-ramp and escape hatch, not a competing semantic universe. Over time, shared behavior can move below both paths into generated or compiled components.
